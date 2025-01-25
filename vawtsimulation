@@ -1,0 +1,21 @@
+import math
+import matplotlib
+
+BETZ = 0.35
+GENEFF = 0.85
+CVTEFF = 0.85
+# create simulated fluctuations of wind data for testing
+def createWind(wind):
+  windList = []
+  return windList
+
+def shifterDriver(speed, rad):
+  gearRatio = 0
+  return gearRatio
+
+def simulate(windList, dimensions, config):
+  # waahahh
+  # hi
+
+def visualize(wind, metrics, power):
+  # ugh

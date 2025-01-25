@@ -19,7 +19,7 @@ def gearratio(WINDSPEED):
   # conv to rads 
   RPMRAD = (GENERATORRATEDSPEED * 2 * math.pi) / 60
   LOWESTROTATIONALSPEED = (TSR * LOWEST) / TRADIUS
-  HIGHESTROTATIONALSPEED = (TSR * LOWEST) / TRADIUS
+  HIGHESTROTATIONALSPEED = (TSR * HIGHEST) / TRADIUS
   RATEDROTATIONALSPEED = (TSR * WINDSPEED) / TRADIUS
 
   # wind turbine torque is mechanical power / rotational speed of turbine
@@ -33,10 +33,14 @@ def gearratio(WINDSPEED):
   print('------------------------------------------')
   print(f"UPPER BOUND: {HIGHESTGR} \nLOWEST: {LOWESTGR} \nAVERAGE: {AVERAGEGR}")
 
-  # torque for G is Tturbine * GENEFF * GEAR RATIO 
-  GENTORQUE = TORQUE * GENERATOREFF * AVERAGEGR
   print('------------------------------------------')
-  print(f"TURBINE TORQUE: {TORQUE} \nGENERATOR TORQUE: {GENTORQUE} ")
+  print(f"TURBINE TORQUE: {TORQUE}")
+
+  GPOWER = MECHPOWER * GENERATOREFF 
+  print('------------------------------------------')
+  print(f"MECHANICAL POWER FROM TURBINE: {MECHPOWER}W \nELECTRIC POWER FROM GENERATOR: {GPOWER}W")
+  
+
 
 
 wind = int(input("AVERAGE WINDSPEED OF AREA: "))
