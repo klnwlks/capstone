@@ -2,7 +2,7 @@ import math
 
 GENERATOREFF = 0.85 # find source for this number
 GENERATORRATEDSPEED = 1500 # IDEAL RPM
-TSR = 2
+TSR = 4
 BETZ = 0.35
 DENSITY = 1.225 # METER
 TRADIUS = 1.64 # METER

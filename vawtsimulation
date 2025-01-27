@@ -1,12 +1,24 @@
-import math
 import matplotlib
+import numpy as np
 
 BETZ = 0.35
 GENEFF = 0.85
 CVTEFF = 0.85
 # create simulated fluctuations of wind data for testing
-def createWind(wind):
+# NOTE RESSHAPE EQUATIONS TO OPTIMIZE FOR TSR, NOT RPMA   
+# tsr = w*R / V
+
+# simulate wind fluctuations
+def createWind(wind, n):
   windList = []
+  for i in range(n):
+    windList.append(
+      wind +
+      2 * np.pi(2 * np.pi * i / 120) +
+      1 * np.pi(2 * np.pi * i / 30) +
+      0.5 * np.random.randn(n)
+    )
+
   return windList
 
 def shifterDriver(speed, rad):
@@ -19,3 +31,38 @@ def simulate(windList, dimensions, config):
 
 def visualize(wind, metrics, power):
   # ugh
+
+def __main__():
+  # only if no provided wind data
+  print('>> WINDSPEED ----------------')
+  print('READING FILE FOR DATA')
+  data = 0 # get file 
+  if (data is None):
+    print('FILE UNABLE TO BE READ, DEFAULTING.')
+    w = int(input('WINDSPEED: '))
+    d = int(input('NUMBER OF DATAPOINTS: '))
+    data = createWind(w, d)
+
+  print('>> DIMENSIONS ---------------')
+  diameter = float(input('TURBINE DIAMETER: '))
+  height = float(input('TURBINE HEIGHT: '))
+  chordthickness = float(input('CHORD THICKNESS: '))
+  chordlen = float(input('CHORD LENGTH: '))
+  dimen = {
+    'd': diameter, 
+    'h': height,
+    'ct': chordthickness,
+    'cl': chordlen
+  }
+
+  print('>> CONFIG -------------------')
+  inf = int(input('CONTINOOUS RUN: '))
+  den = float(input('AIR DENSITY: '))
+  genspeed = int(input('GENERATOR RATED RPM: '))
+
+  conf = {
+    'i': inf,
+    'd': den,
+    'g': genspeed
+  }
+  simulate()
