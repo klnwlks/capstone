@@ -4,11 +4,13 @@ import numpy as np
 BETZ = 0.35
 GENEFF = 0.85
 CVTEFF = 0.85
+IDEALTSR = 2 # small widnd turbines
 # create simulated fluctuations of wind data for testing
 # NOTE RESSHAPE EQUATIONS TO OPTIMIZE FOR TSR, NOT RPMA   
 # tsr = w*R / V
 
 # simulate wind fluctuations
+# this assumes a minute 
 def createWind(wind, n):
   windList = []
   for i in range(n):
@@ -21,13 +23,39 @@ def createWind(wind, n):
 
   return windList
 
-def shifterDriver(speed, rad):
+# we use a tsr based approach
+# what we do is calculate tsr, make ideal gear ratio to match from tsr 
+# then "tilt" the shift to know how much to shift for that
+# also place a treshhold so we dont shift all the time
+def shifterDriver(power, speed, dimensions, config):
   gearRatio = 0
   return gearRatio
 
 def simulate(windList, dimensions, config):
   # waahahh
   # hi
+  # metrics to calculate
+  # - power
+  # - rpm at that moment
+  # - torque 
+  # inertia = 101.28kg * m^2, obtain from fusion simulations
+  angularaccel = 0
+  angularvelo = 0
+  for i in windList:
+    # power is power from wind - power from inertia
+    # inertia is defined by moment of inertia * angular accel * angular velocity
+    omega = angularvelo # past angular velo
+    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions.d/2)
+    powofinertia = 101.28 * angularaccel * angularvelo
+    torque = 0.5 * config.d * (dimensions.d * dimensions.h) * i**3 
+    power = torque * BETZ
+    # delta angular velo / delta time
+    angularvelo = rpm / 60 * 2 * np.pi
+    angularaccel = (angularvelo - omega) / (1) # convert to seconds because why tf not
+    netpow = power - powofinertia
+    shifterDriver()
+
+
 
 def visualize(wind, metrics, power):
   # ugh
