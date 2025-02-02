@@ -27,9 +27,45 @@ def createWind(wind, n):
 # what we do is calculate tsr, make ideal gear ratio to match from tsr 
 # then "tilt" the shift to know how much to shift for that
 # also place a treshhold so we dont shift all the time
-def shifterDriver(power, speed, dimensions, config):
-  gearRatio = 0
-  return gearRatio
+# calculate current gear ratio, return ideal and power output from electricity
+def shifterDriver(power, rpm, speed, dimensions, config):
+  gearRatio = 1
+  # input radius of torroidal cvt discs
+  rinput = dimensions.input
+  routput = dimensions.output
+  # torus shifter, it adjusts angle to change radius
+  theta = 0
+
+  # upper and lower gear ratios, given from vawtgearratio
+  lower = config.lower
+  upper = config.upper
+
+  # ideal rpm
+  ideal = config.g
+  rotationalspeed = rpm * 2 * np.pi /60
+  currenttsr = rotationalspeed * dimensions.r / v
+  gearRatio = routput / rinput
+  
+  # calculates ideal gear ratio to upkeep ideal tsr of 2
+  idealgr = gearRatio * IDEALTSR / currenttsr
+
+  # if difference between the two gear ratios are greater than 1, shift 
+  # ensures that it doesnt shift all the time and yadda yadda
+  if (idealgr - gearRatio > 1):
+    # shift the gear
+    # insert magic formula that determines theta by difference of the two gear ratios
+    theta = 0
+
+    # make sure it doesnt go beyond radius or the gear ratio bounds
+
+    gearRatio = routput / rinput
+    print(f'>> SHIFTED TURBINE TO ')
+
+  print('>> METRICS --------------')
+  return {
+    'power': power * config.eff # electrical power generated,
+    'ratio': gearRatio
+  }
 
 def simulate(windList, dimensions, config):
   # waahahh
@@ -53,12 +89,14 @@ def simulate(windList, dimensions, config):
     angularvelo = rpm / 60 * 2 * np.pi
     angularaccel = (angularvelo - omega) / (1) # convert to seconds because why tf not
     netpow = power - powofinertia
-    shifterDriver()
+    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config)
 
+  visualize()
 
 
 def visualize(wind, metrics, power):
   # ugh
+  x = list(range(len(wind)))
 
 def __main__():
   # only if no provided wind data
@@ -77,20 +115,24 @@ def __main__():
   chordthickness = float(input('CHORD THICKNESS: '))
   chordlen = float(input('CHORD LENGTH: '))
   dimen = {
-    'd': diameter, 
-    'h': height,
+    'diam': diameter, 
+    'hei': height,
     'ct': chordthickness,
     'cl': chordlen
   }
 
   print('>> CONFIG -------------------')
-  inf = int(input('CONTINOOUS RUN: '))
+  inf = int(input('CONTINUOUS RUN: '))
   den = float(input('AIR DENSITY: '))
   genspeed = int(input('GENERATOR RATED RPM: '))
+  inertia = float(input('MOMENT OF INERTIA OF TURBINE: '))
 
   conf = {
-    'i': inf,
-    'd': den,
-    'g': genspeed
+    'infinite': inf,
+    'density': den,
+    'genv': genspeed,
+    'lowerbound': lower,
+    'upperbound': upper,
+    'inertia': inertia,
   }
   simulate()
