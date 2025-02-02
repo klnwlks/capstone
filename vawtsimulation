@@ -1,4 +1,4 @@
-import matplotlib
+import matplotlib as plt
 import numpy as np
 
 BETZ = 0.35
@@ -63,7 +63,7 @@ def shifterDriver(power, rpm, speed, dimensions, config):
 
   print('>> METRICS --------------')
   return {
-    'power': power * config.eff # electrical power generated,
+    'power': power * config.eff, # electrical power generated,
     'ratio': gearRatio
   }
 
@@ -94,9 +94,13 @@ def simulate(windList, dimensions, config):
   visualize()
 
 
-def visualize(wind, metrics, power):
-  # ugh
+def visualize(wind, metrics):
+  # time series
   x = list(range(len(wind)))
+  plt.plot(x, wind, label='TIME VS WIND')
+  plt.plot(x, metrics.power, label='TIME VS POWER GENERATION')
+  plt.plot(x, metrics.rpm, label='TIME VS RPM')
+  plt.plot(x, metrics.ratio, label='GEAR RATIO')
 
 def __main__():
   # only if no provided wind data
