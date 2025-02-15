@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 
 BETZ = 0.35
 GENEFF = 0.85
@@ -76,7 +77,7 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
     # i mean, if a radius value maps to a theta value, cant we just linmap it again?
     # of course, theres also the option of just returning the idgr
 
-    if gearRatio > lower:
+    if idealgr > lower:
       gearRatio = lower
     else: 
       gearRatio = idealgr
@@ -120,7 +121,7 @@ def simulate(windList, dimensions, config):
     power = torque * BETZ
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
-    angularaccel = (angularvelo - omega) / 60 # convert to seconds because why tf not
+    angularaccel = (angularvelo - omega) / 900# convert to seconds because why tf not
     powofinertia = 101.28 * angularaccel * angularvelo
     netpow = power - powofinertia
     epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, i, ratio)
@@ -154,13 +155,30 @@ def visualize(wind, metrics):
 def main():
   # only if no provided wind data
   print('>> WINDSPEED ----------------')
+  filename = input('FILENAME: ')
   print('READING FILE FOR DATA')
-  data = 0 # get file 
-  if (data is None or data == 0):
-    print('FILE UNABLE TO BE READ, DEFAULTING.')
-    w = int(input('WINDSPEED: '))
-    d = int(input('NUMBER OF DATAPOINTS: '))
-    data = createWind(w, d)
+
+  data = [] # get file 
+  # this is for nrel
+  try:
+    with open(filename, mode='r', newline='') as file:
+      reader = csv.reader(file)
+      for _ in range(2):
+        next(reader)
+      
+      for row in reader:
+        print(float(row[6]))
+        data.append(float(row[6]))
+    
+    print('READ FILE')
+
+  except: 
+    data = 0
+    if (data is None or data == 0):
+      print('FILE UNABLE TO BE READ, DEFAULTING.')
+      w = int(input('WINDSPEED: '))
+      d = int(input('NUMBER OF DATAPOINTS: '))
+      data = createWind(w, d)
 
   print('>> DIMENSIONS ---------------')
   diameter = float(input('TURBINE DIAMETER: '))
