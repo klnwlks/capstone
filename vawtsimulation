@@ -42,14 +42,17 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
   # ideal rpm
   ideal = config['genv']
   rotationalspeed = rpm * 2 * np.pi /60
-  currenttsr = rotationalspeed * (dimensions['diam'] / 2 ) / wv
+  # currenttsr = rotationalspeed * (dimensions['diam'] / 2 ) / wv
   try:
     gearRatio = gr
   except:
     gearRatio = (lower + upper) / 2
   
   # calculates ideal gear ratio to upkeep ideal tsr of 2
-  idealgr = gearRatio * IDEALTSR / currenttsr
+  # idealgr = gearRatio * IDEALTSR / currenttsr
+
+  # calculates for optimum rpm
+  idealgr = gearRatio * ideal / (rpm * gearRatio)
 
   # if difference between the two gear ratios are greater than 1, shift 
   # ensures that it doesnt shift all the time and yadda yadda
@@ -60,6 +63,8 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
 
     # linear map
     def mapfunc(x, xmin, xmax):
+      if x > xmax:
+        return 90
       return 90 * ((x - xmin) / (xmax - xmin))
 
     # make sure it doesnt go beyond radius or the gear ratio bounds
@@ -71,7 +76,10 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
     # i mean, if a radius value maps to a theta value, cant we just linmap it again?
     # of course, theres also the option of just returning the idgr
 
-    gearRatio = idealgr
+    if gearRatio > lower:
+      gearRatio = lower
+    else: 
+      gearRatio = idealgr
     print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {np.ceil(theta)} DEGREE')
 
   # given this, i want to recalculate power at that moment
@@ -106,8 +114,8 @@ def simulate(windList, dimensions, config):
     # power is power from wind - power from inertia
     # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
-    #rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions['diam'] /2)
-    rpm = 100
+    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions['diam'] /2)
+    # rpm = 100
     torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * i**3 
     power = torque * BETZ
     # delta angular velo / delta time
