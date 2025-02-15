@@ -16,11 +16,12 @@ def createWind(wind, n):
   for i in range(n):
     windList.append(
       wind +
-      2 * np.pi(2 * np.pi * i / 120) +
-      1 * np.pi(2 * np.pi * i / 30) +
+      2 * np.pi * (2 * np.pi * i / 120) +
+      1 * np.pi * (2 * np.pi * i / 30) +
       0.5 * np.random.randn(n)
     )
 
+  print(windList)
   return windList
 
 # we use a tsr based approach
@@ -41,7 +42,7 @@ def shifterDriver(power, rpm, speed, dimensions, config):
   upper = config.upper
 
   # ideal rpm
-  ideal = config.g
+  ideal = config.genv
   rotationalspeed = rpm * 2 * np.pi /60
   currenttsr = rotationalspeed * dimensions.r / v
   gearRatio = routput / rinput
@@ -56,14 +57,34 @@ def shifterDriver(power, rpm, speed, dimensions, config):
     # insert magic formula that determines theta by difference of the two gear ratios
     theta = 0
 
-    # make sure it doesnt go beyond radius or the gear ratio bounds
+    # linear map
+    def mapfunc(x, xmin, xmax):
+      return 90 * (x - xmin) / (xmax - xmin)
 
-    gearRatio = routput / rinput
-    print(f'>> SHIFTED TURBINE TO ')
+    # make sure it doesnt go beyond radius or the gear ratio bounds
+    # get theta based on a linearly mapped values between lower and upper
+    # for example, 45deg is the median value
+    theta = mapfunc(gearRatio, lower, upper)
+
+    # translate theta change back to gear ratio
+    # i mean, if a radius value maps to a theta value, cant we just linmap it again?
+    # of course, theres also the option of just returning the idgr
+
+    gearRatio = idealgr
+    print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {theta} DEGREE')
+
+  # given this, i want to recalculate power at that moment
+  # torque of turbine at that moment
+  torque = power / speed
+  genspeed = speed / gearRatio
+  gentorque = torque * gearRatio * GENEFF
+
+  # this is what we want
+  genpower = gentorque * genspeed
 
   print('>> METRICS --------------')
   return {
-    'power': power * config.eff, # electrical power generated,
+    'power': genpower, # electrical power generated,
     'ratio': gearRatio
   }
 
@@ -81,9 +102,9 @@ def simulate(windList, dimensions, config):
     # power is power from wind - power from inertia
     # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
-    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions.d/2)
+    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions.diam/2)
     powofinertia = 101.28 * angularaccel * angularvelo
-    torque = 0.5 * config.d * (dimensions.d * dimensions.h) * i**3 
+    torque = 0.5 * config.d * (dimensions.diam * dimensions.hei) * i**3 
     power = torque * BETZ
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
@@ -91,7 +112,13 @@ def simulate(windList, dimensions, config):
     netpow = power - powofinertia
     epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config)
 
-  visualize()
+  metrics = {
+    'pow': netpow,
+    'epow': epower.power,
+    'ratio': epower.ratio,
+    'genrpm': rpm * epower.ratio
+  }
+  visualize(windList, metrics)
 
 
 def visualize(wind, metrics):
@@ -99,15 +126,15 @@ def visualize(wind, metrics):
   x = list(range(len(wind)))
   plt.plot(x, wind, label='TIME VS WIND')
   plt.plot(x, metrics.power, label='TIME VS POWER GENERATION')
-  plt.plot(x, metrics.rpm, label='TIME VS RPM')
+  plt.plot(x, metrics.genrpm, label='TIME VS RPM')
   plt.plot(x, metrics.ratio, label='GEAR RATIO')
 
-def __main__():
+def main():
   # only if no provided wind data
   print('>> WINDSPEED ----------------')
   print('READING FILE FOR DATA')
   data = 0 # get file 
-  if (data is None):
+  if (data is None or data == 0):
     print('FILE UNABLE TO BE READ, DEFAULTING.')
     w = int(input('WINDSPEED: '))
     d = int(input('NUMBER OF DATAPOINTS: '))
@@ -130,6 +157,8 @@ def __main__():
   den = float(input('AIR DENSITY: '))
   genspeed = int(input('GENERATOR RATED RPM: '))
   inertia = float(input('MOMENT OF INERTIA OF TURBINE: '))
+  lower = float(input('LOWER GEAR RATIO: '))
+  upper = float(input('UPPER GEAR RATIO: '))
 
   conf = {
     'infinite': inf,
@@ -139,4 +168,7 @@ def __main__():
     'upperbound': upper,
     'inertia': inertia,
   }
-  simulate()
+  simulate(data, dimen, conf)
+
+if __name__ == '__main__':
+  main()
