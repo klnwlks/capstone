@@ -1,4 +1,4 @@
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 
 BETZ = 0.35
@@ -13,39 +13,37 @@ IDEALTSR = 2 # small widnd turbines
 # this assumes a minute 
 def createWind(wind, n):
   windList = []
-  for i in range(n):
-    windList.append(
-      wind +
-      2 * np.pi * (2 * np.pi * i / 120) +
-      1 * np.pi * (2 * np.pi * i / 30) +
-      0.5 * np.random.randn(n)
-    )
+  windList.append(
+    wind +
+    2 * np.pi * (2 * np.pi * 0 / 120) +
+    1 * np.pi * (2 * np.pi * 0 / 30) +
+    0.5 * np.random.randn(n)
+  )
 
-  print(windList)
-  return windList
+  return windList[0]
 
 # we use a tsr based approach
 # what we do is calculate tsr, make ideal gear ratio to match from tsr 
 # then "tilt" the shift to know how much to shift for that
 # also place a treshhold so we dont shift all the time
 # calculate current gear ratio, return ideal and power output from electricity
-def shifterDriver(power, rpm, speed, dimensions, config):
+def shifterDriver(power, rpm, speed, dimensions, config, wv):
   gearRatio = 1
   # input radius of torroidal cvt discs
-  rinput = dimensions.input
-  routput = dimensions.output
+  # rinput = dimensions.input
+  # routput = dimensions.output
   # torus shifter, it adjusts angle to change radius
   theta = 0
 
   # upper and lower gear ratios, given from vawtgearratio
-  lower = config.lower
-  upper = config.upper
+  lower = config['lowerbound']
+  upper = config['upperbound']
 
   # ideal rpm
-  ideal = config.genv
+  ideal = config['genv']
   rotationalspeed = rpm * 2 * np.pi /60
-  currenttsr = rotationalspeed * dimensions.r / v
-  gearRatio = routput / rinput
+  currenttsr = rotationalspeed * (dimensions['diam'] / 2 ) / wv
+  gearRatio = (lower + upper) / 2
   
   # calculates ideal gear ratio to upkeep ideal tsr of 2
   idealgr = gearRatio * IDEALTSR / currenttsr
@@ -82,7 +80,6 @@ def shifterDriver(power, rpm, speed, dimensions, config):
   # this is what we want
   genpower = gentorque * genspeed
 
-  print('>> METRICS --------------')
   return {
     'power': genpower, # electrical power generated,
     'ratio': gearRatio
@@ -98,25 +95,32 @@ def simulate(windList, dimensions, config):
   # inertia = 101.28kg * m^2, obtain from fusion simulations
   angularaccel = 0
   angularvelo = 0
+  netpowarr = []
+  epowerarr = []
+  ratioarr = []
   for i in windList:
     # power is power from wind - power from inertia
     # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
-    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions.diam/2)
-    powofinertia = 101.28 * angularaccel * angularvelo
-    torque = 0.5 * config.d * (dimensions.diam * dimensions.hei) * i**3 
+    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions['diam'] /2)
+    torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * i**3 
     power = torque * BETZ
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
-    angularaccel = (angularvelo - omega) / (1) # convert to seconds because why tf not
+    angularaccel = (angularvelo - omega) / 60 # convert to seconds because why tf not
+    powofinertia = 101.28 * angularaccel * angularvelo
     netpow = power - powofinertia
-    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config)
+    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, i)
+
+    netpowarr.append(netpow)
+    epowerarr.append(epower['power'])
+    ratioarr.append(epower['ratio'])
 
   metrics = {
-    'pow': netpow,
-    'epow': epower.power,
-    'ratio': epower.ratio,
-    'genrpm': rpm * epower.ratio
+    'pow': netpowarr,
+    'epow': epowerarr,
+    'ratio': ratioarr,
+    'genrpm': rpm * np.array(ratioarr)
   }
   visualize(windList, metrics)
 
@@ -124,10 +128,14 @@ def simulate(windList, dimensions, config):
 def visualize(wind, metrics):
   # time series
   x = list(range(len(wind)))
+  plt.figure
   plt.plot(x, wind, label='TIME VS WIND')
-  plt.plot(x, metrics.power, label='TIME VS POWER GENERATION')
-  plt.plot(x, metrics.genrpm, label='TIME VS RPM')
-  plt.plot(x, metrics.ratio, label='GEAR RATIO')
+  plt.plot(x, metrics['epow'], label='TIME VS POWER GENERATION')
+  plt.plot(x, metrics['genrpm'], label='TIME VS RPM')
+  plt.plot(x, metrics['ratio'], label='GEAR RATIO')
+
+  plt.legend()
+  plt.show()
 
 def main():
   # only if no provided wind data
