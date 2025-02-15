@@ -27,8 +27,7 @@ def createWind(wind, n):
 # then "tilt" the shift to know how much to shift for that
 # also place a treshhold so we dont shift all the time
 # calculate current gear ratio, return ideal and power output from electricity
-def shifterDriver(power, rpm, speed, dimensions, config, wv):
-  gearRatio = 1
+def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
   # input radius of torroidal cvt discs
   # rinput = dimensions.input
   # routput = dimensions.output
@@ -38,38 +37,42 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv):
   # upper and lower gear ratios, given from vawtgearratio
   lower = config['lowerbound']
   upper = config['upperbound']
+  gearRatio = (lower + upper) / 2
 
   # ideal rpm
   ideal = config['genv']
   rotationalspeed = rpm * 2 * np.pi /60
   currenttsr = rotationalspeed * (dimensions['diam'] / 2 ) / wv
-  gearRatio = (lower + upper) / 2
+  try:
+    gearRatio = gr
+  except:
+    gearRatio = (lower + upper) / 2
   
   # calculates ideal gear ratio to upkeep ideal tsr of 2
   idealgr = gearRatio * IDEALTSR / currenttsr
 
   # if difference between the two gear ratios are greater than 1, shift 
   # ensures that it doesnt shift all the time and yadda yadda
-  if (idealgr - gearRatio > 1):
+  if (abs(idealgr - gearRatio) > 1):
     # shift the gear
     # insert magic formula that determines theta by difference of the two gear ratios
     theta = 0
 
     # linear map
     def mapfunc(x, xmin, xmax):
-      return 90 * (x - xmin) / (xmax - xmin)
+      return 90 * ((x - xmin) / (xmax - xmin))
 
     # make sure it doesnt go beyond radius or the gear ratio bounds
     # get theta based on a linearly mapped values between lower and upper
     # for example, 45deg is the median value
-    theta = mapfunc(gearRatio, lower, upper)
+    theta = mapfunc(gearRatio, upper, lower)
 
     # translate theta change back to gear ratio
     # i mean, if a radius value maps to a theta value, cant we just linmap it again?
     # of course, theres also the option of just returning the idgr
 
     gearRatio = idealgr
-    print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {theta} DEGREE')
+    print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {np.ceil(theta)} DEGREE')
 
   # given this, i want to recalculate power at that moment
   # torque of turbine at that moment
@@ -98,11 +101,13 @@ def simulate(windList, dimensions, config):
   netpowarr = []
   epowerarr = []
   ratioarr = []
+  ratio = (config['lowerbound'] + config['upperbound']) / 2
   for i in windList:
     # power is power from wind - power from inertia
     # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
-    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions['diam'] /2)
+    #rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions['diam'] /2)
+    rpm = 100
     torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * i**3 
     power = torque * BETZ
     # delta angular velo / delta time
@@ -110,11 +115,12 @@ def simulate(windList, dimensions, config):
     angularaccel = (angularvelo - omega) / 60 # convert to seconds because why tf not
     powofinertia = 101.28 * angularaccel * angularvelo
     netpow = power - powofinertia
-    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, i)
+    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, i, ratio)
 
     netpowarr.append(netpow)
     epowerarr.append(epower['power'])
     ratioarr.append(epower['ratio'])
+    ratio = epower['ratio']
 
   metrics = {
     'pow': netpowarr,
