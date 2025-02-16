@@ -6,8 +6,6 @@ BETZ = 0.35
 GENEFF = 0.85
 CVTEFF = 0.85
 IDEALTSR = 2 # small widnd turbines
-# create simulated fluctuations of wind data for testing
-# NOTE RESSHAPE EQUATIONS TO OPTIMIZE FOR TSR, NOT RPMA   
 # tsr = w*R / V
 
 # simulate wind fluctuations
