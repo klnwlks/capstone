@@ -3,7 +3,7 @@ import math
 
 DENSITY = 1.225
 BETZ = 0.35 # rough average of vawt limit
-TSR = 4 # small vawt scale for darries
+TSR = 2 # small vawt scale for darries
 SOLIDITY = 0.2 # optimal for small vawts with small windspeeds
 RATIO = 1.75 # see sources
 BLADERATIO = 7 # see sources, blade len / diameter

@@ -143,13 +143,21 @@ def simulate(windList, dimensions, config):
 def visualize(wind, metrics):
   # time series
   x = list(range(len(wind)))
-  plt.figure
-  plt.plot(x, wind, label='TIME VS WIND')
-  plt.plot(x, metrics['epow'], label='TIME VS POWER GENERATION')
-  plt.plot(x, metrics['genrpm'], label='TIME VS RPM')
-  plt.plot(x, metrics['ratio'], label='GEAR RATIO')
+  ax, fig = plt.subplots(4, 1)
 
-  plt.legend()
+  fig[0].plot(x, wind, label='TIME VS WIND')
+  fig[0].legend()
+
+  fig[1].plot(x, metrics['epow'], label='TIME VS POWER GENERATION')
+  fig[1].legend()
+
+  fig[2].plot(x, metrics['genrpm'], label='TIME VS RPM')
+  fig[2].legend()
+
+  fig[3].plot(x, metrics['ratio'], label='GEAR RATIO')
+  fig[3].legend()
+
+  plt.tight_layout()
   plt.show()
 
 def main():
@@ -167,7 +175,6 @@ def main():
         next(reader)
       
       for row in reader:
-        print(float(row[6]))
         data.append(float(row[6]))
     
     print('READ FILE')
