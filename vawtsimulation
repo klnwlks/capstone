@@ -51,8 +51,7 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
   # idealgr = gearRatio * IDEALTSR / currenttsr
 
   # calculates for optimum rpm
-  idealgr = gearRatio * ideal / (rpm * gearRatio)
-
+  idealgr = np.ceil(gearRatio * ideal / (rpm * gearRatio))
   # if difference between the two gear ratios are greater than 1, shift 
   # ensures that it doesnt shift all the time and yadda yadda
   if (abs(idealgr - gearRatio) > 1):
@@ -62,6 +61,8 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
 
     # linear map
     def mapfunc(x, xmin, xmax):
+      if xmax == xmin:
+        return 45
       if x > xmax:
         return 90
       return 90 * ((x - xmin) / (xmax - xmin))
@@ -77,6 +78,8 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
 
     if idealgr > lower:
       gearRatio = lower
+    elif idealgr < upper:
+      gearRatio = upper
     else: 
       gearRatio = idealgr
     print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {np.ceil(theta)} DEGREE')
@@ -84,6 +87,8 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
   # given this, i want to recalculate power at that moment
   # torque of turbine at that moment
   torque = power / speed
+
+  # generator speed
   genspeed = speed / gearRatio
   gentorque = torque * gearRatio * GENEFF
 
@@ -108,6 +113,9 @@ def simulate(windList, dimensions, config):
   netpowarr = []
   epowerarr = []
   ratioarr = []
+  rpmarr = []
+  kwharr = []
+  kwh = 0
   ratio = (config['lowerbound'] + config['upperbound']) / 2
   for i in windList:
     # power is power from wind - power from inertia
@@ -127,13 +135,20 @@ def simulate(windList, dimensions, config):
     netpowarr.append(netpow)
     epowerarr.append(epower['power'])
     ratioarr.append(epower['ratio'])
+    rpmarr.append(epower['ratio'] * rpm)
     ratio = epower['ratio']
+    kwh += (epower['power'] * 0.25) / 1000 # nrel specific
+
+    if i % 4 == 0: # also nrel specif
+      kwharr.append(kwh)
+      kwh = 0
 
   metrics = {
     'pow': netpowarr,
     'epow': epowerarr,
     'ratio': ratioarr,
-    'genrpm': rpm * np.array(ratioarr)
+    'genrpm': rpmarr,
+    'kwh': kwharr
   }
   visualize(windList, metrics)
 
@@ -141,7 +156,15 @@ def simulate(windList, dimensions, config):
 def visualize(wind, metrics):
   # time series
   x = list(range(len(wind)))
-  ax, fig = plt.subplots(4, 1)
+  ax, fig = plt.subplots(5, 1)
+
+  print('-- RESULTS ')
+  print(f'MEAN WINDSPEED: {np.mean(wind)}')
+  print(f'MEAN ELECTRIC POWER: {np.mean(metrics['epow'])}')
+  print(f'MEAN RPM: {np.mean(metrics['genrpm'])}')
+  print(f'MEAN RATIO: {np.mean(metrics['ratio'])}')
+  print(f'MEAN KWH GENERATION: {np.mean(metrics['kwh'])}')
+
 
   fig[0].plot(x, wind, label='TIME VS WIND')
   fig[0].legend()
