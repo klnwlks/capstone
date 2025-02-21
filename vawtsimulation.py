@@ -117,20 +117,20 @@ def simulate(windList, dimensions, config):
   kwharr = []
   kwh = 0
   ratio = (config['lowerbound'] + config['upperbound']) / 2
-  for i in windList:
+  for i in range(len(windList)):
     # power is power from wind - power from inertia
     # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
-    rpm = (IDEALTSR * i * 60) / (2 * np.pi * dimensions['diam'] /2)
+    rpm = (IDEALTSR * windList[i] * 60) / (2 * np.pi * dimensions['diam'] /2)
     # rpm = 100
-    torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * i**3 
+    torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * windList[i]**3 
     power = torque * BETZ
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
     angularaccel = (angularvelo - omega) / 900# convert to seconds because why tf not
     powofinertia = 101.28 * angularaccel * angularvelo
     netpow = power - powofinertia
-    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, i, ratio)
+    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, windList[i], ratio)
 
     netpowarr.append(netpow)
     epowerarr.append(epower['power'])
@@ -156,7 +156,7 @@ def simulate(windList, dimensions, config):
 def visualize(wind, metrics):
   # time series
   x = list(range(len(wind)))
-  ax, fig = plt.subplots(5, 1)
+  ax, fig = plt.subplots(4, 1)
 
   print('-- RESULTS ')
   print(f'MEAN WINDSPEED: {np.mean(wind)}')
