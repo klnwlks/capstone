@@ -36,6 +36,6 @@ def w2area(wind, power):
   print('CHORD LEN:' + str(cho))
   print('CHORD THICKNESS:' + str(chothick))
 
-w = int(input('WIND SPEED: '))
+w = float(input('WIND SPEED: '))
 p = int(input('DESIRED POWER: '))
 w2area(w, p)

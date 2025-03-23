@@ -10,7 +10,10 @@ HEIGHT = 5.17 # METER
 
 def gearratio(WINDSPEED):
   print(f"DIAGNOSTICS AT AVERAGE WINDSPEED {WINDSPEED}M/S")
-  LOWEST = WINDSPEED - 2
+  if WINDSPEED - 2 < 1:
+    LOWEST = 1
+  else: 
+    LOWEST = WINDSPEED - 2
   HIGHEST = WINDSPEED + 20 # arbitrary values but for goodness sake
 
   print('------------------------------------------')
@@ -44,5 +47,8 @@ def gearratio(WINDSPEED):
 
 
 
-wind = int(input("AVERAGE WINDSPEED OF AREA: "))
+wind = float(input("AVERAGE WINDSPEED OF AREA: "))
+TRADIUS = float(input('DIAMETER: '))
+HEIGHT = float(input('HEIGHT: '))
+GENSPEED = int(input('GENSPEED: '))
 gearratio(wind)

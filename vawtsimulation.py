@@ -119,6 +119,8 @@ def simulate(windList, dimensions, config):
   ratio = (config['lowerbound'] + config['upperbound']) / 2
   for i in range(len(windList)):
     # power is power from wind - power from inertia
+    if (windList[i] == 0):
+      windList[i] = 0.1
     # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
     rpm = (IDEALTSR * windList[i] * 60) / (2 * np.pi * dimensions['diam'] /2)
@@ -196,7 +198,7 @@ def main():
         next(reader)
       
       for row in reader:
-        data.append(float(row[6]))
+        data.append(float(row[5]))
     
     print('READ FILE')
 
