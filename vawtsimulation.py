@@ -82,7 +82,7 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
       gearRatio = upper
     else: 
       gearRatio = idealgr
-    print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {np.ceil(theta)} DEGREE')
+    # print(f'>> SHIFTED TURBINE TO {gearRatio}, ROLLER ANGLED AT {np.ceil(theta)} DEGREE')
 
   # given this, i want to recalculate power at that moment
   # torque of turbine at that moment
@@ -107,15 +107,19 @@ def simulate(windList, dimensions, config):
   # - power
   # - rpm at that moment
   # - torque 
-  # inertia = 101.28kg * m^2, obtain from fusion simulations
+
   angularaccel = 0
   angularvelo = 0
   netpowarr = []
   epowerarr = []
+  opowerarr = []
   ratioarr = []
   rpmarr = []
   kwharr = []
+  srgpowarr = []
+
   kwh = 0
+  opower = 0 
   ratio = (config['lowerbound'] + config['upperbound']) / 2
   for i in range(len(windList)):
     # power is power from wind - power from inertia
@@ -129,8 +133,11 @@ def simulate(windList, dimensions, config):
     power = torque * BETZ
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
-    angularaccel = (angularvelo - omega) / 900# convert to seconds because why tf not
-    powofinertia = 101.28 * angularaccel * angularvelo
+
+    # DELTA V / DELTA S
+    angularaccel = (angularvelo - omega) / 900 # 15 MINUTE CONFIGURATION
+    powofinertia = config['inertia'] * angularaccel * angularvelo
+
     netpow = power - powofinertia
     epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, windList[i], ratio)
 
@@ -139,7 +146,10 @@ def simulate(windList, dimensions, config):
     ratioarr.append(epower['ratio'])
     rpmarr.append(epower['ratio'] * rpm)
     ratio = epower['ratio']
-    kwh += (epower['power'] * 0.25) / 1000 # nrel specific
+    opower = ( (epower['ratio'] * rpm) / (config['genv'])
+                      *  epower['power'])
+    opowerarr.append(opower)
+    kwh += (opower * 0.25) / 1000 # nrel specific
 
     if i % 4 == 0: # also nrel specif
       kwharr.append(kwh)
@@ -147,7 +157,7 @@ def simulate(windList, dimensions, config):
 
   metrics = {
     'pow': netpowarr,
-    'epow': epowerarr,
+    'opow': opowerarr,
     'ratio': ratioarr,
     'genrpm': rpmarr,
     'kwh': kwharr
@@ -161,8 +171,9 @@ def visualize(wind, metrics):
   ax, fig = plt.subplots(4, 1)
 
   print('-- RESULTS ')
+  print(f'MEAN POWER FROM TURBINE {np.mean(metrics['pow'])}')
   print(f'MEAN WINDSPEED: {np.mean(wind)}')
-  print(f'MEAN ELECTRIC POWER: {np.mean(metrics['epow'])}')
+  print(f'MEAN ELECTRIC POWER: {np.mean(metrics['opow'])}')
   print(f'MEAN RPM: {np.mean(metrics['genrpm'])}')
   print(f'MEAN RATIO: {np.mean(metrics['ratio'])}')
   print(f'MEAN KWH GENERATION: {np.mean(metrics['kwh'])}')
@@ -171,7 +182,7 @@ def visualize(wind, metrics):
   fig[0].plot(x, wind, label='TIME VS WIND')
   fig[0].legend()
 
-  fig[1].plot(x, metrics['epow'], label='TIME VS POWER GENERATION')
+  fig[1].plot(x, metrics['opow'], label='TIME VS POWER GENERATION')
   fig[1].legend()
 
   fig[2].plot(x, metrics['genrpm'], label='TIME VS RPM')
@@ -213,17 +224,12 @@ def main():
   print('>> DIMENSIONS ---------------')
   diameter = float(input('TURBINE DIAMETER: '))
   height = float(input('TURBINE HEIGHT: '))
-  chordthickness = float(input('CHORD THICKNESS: '))
-  chordlen = float(input('CHORD LENGTH: '))
   dimen = {
     'diam': diameter, 
     'hei': height,
-    'ct': chordthickness,
-    'cl': chordlen
   }
 
   print('>> CONFIG -------------------')
-  inf = int(input('CONTINUOUS RUN: '))
   den = float(input('AIR DENSITY: '))
   genspeed = int(input('GENERATOR RATED RPM: '))
   inertia = float(input('MOMENT OF INERTIA OF TURBINE: '))
@@ -231,7 +237,6 @@ def main():
   upper = float(input('UPPER GEAR RATIO: '))
 
   conf = {
-    'infinite': inf,
     'density': den,
     'genv': genspeed,
     'lowerbound': lower,
