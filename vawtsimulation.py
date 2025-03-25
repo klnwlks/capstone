@@ -136,12 +136,10 @@ def simulate(windList, dimensions, config):
 
     # DELTA V / DELTA S
     angularaccel = (angularvelo - omega) / 900 # 15 MINUTE CONFIGURATION
-    powofinertia = config['inertia'] * angularaccel * angularvelo
 
-    netpow = power - powofinertia
-    epower = shifterDriver(netpow, rpm, angularvelo, dimensions, config, windList[i], ratio)
+    epower = shifterDriver(power , rpm, angularvelo, dimensions, config, windList[i], ratio)
 
-    netpowarr.append(netpow)
+    netpowarr.append(power)
     epowerarr.append(epower['power'])
     ratioarr.append(epower['ratio'])
     rpmarr.append(epower['ratio'] * rpm)
@@ -232,7 +230,6 @@ def main():
   print('>> CONFIG -------------------')
   den = float(input('AIR DENSITY: '))
   genspeed = int(input('GENERATOR RATED RPM: '))
-  inertia = float(input('MOMENT OF INERTIA OF TURBINE: '))
   lower = float(input('LOWER GEAR RATIO: '))
   upper = float(input('UPPER GEAR RATIO: '))
 
@@ -241,7 +238,6 @@ def main():
     'genv': genspeed,
     'lowerbound': lower,
     'upperbound': upper,
-    'inertia': inertia,
   }
   simulate(data, dimen, conf)
 
