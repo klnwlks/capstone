@@ -1,20 +1,16 @@
 import math
+import csv
+import numpy as np
 
 GENERATOREFF = 0.85 # find source for this number
 GENERATORRATEDSPEED = 1600 # IDEAL RPM
 TSR = 2
 BETZ = 0.35
-DENSITY = 1.225 # METER
-TRADIUS = 1.64 # METER
-HEIGHT = 5.17 # METER
+DENSITY = 1 
 
-def gearratio(WINDSPEED):
+def gearratio(WINDSPEED, LOWEST, HIGHEST, DIAM, HEIGHT):
   print(f"DIAGNOSTICS AT AVERAGE WINDSPEED {WINDSPEED}M/S")
-  if WINDSPEED - 2 < 1:
-    LOWEST = 1
-  else: 
-    LOWEST = WINDSPEED - 2
-  HIGHEST = WINDSPEED + 20 # arbitrary values but for goodness sake
+  TRADIUS = DIAM / 2
 
   print('------------------------------------------')
   print(f"LOWEST WIND SPEED: {LOWEST} \nHIGHEST: {HIGHEST}")
@@ -46,9 +42,41 @@ def gearratio(WINDSPEED):
   
 
 
+filename = input('FILENAME: ')
+print('READING FILE FOR DATA')
 
-wind = float(input("AVERAGE WINDSPEED OF AREA: "))
-TRADIUS = float(input('DIAMETER: '))
+data = [] # get file 
+wind = 0
+high = low = 0
+# this is for nrel
+try:
+  with open(filename, mode='r', newline='') as file:
+    reader = csv.reader(file)
+    for _ in range(2):
+      next(reader)
+    
+    for row in reader:
+      data.append(float(row[5]))
+
+    high = max(data)
+    low = np.percentile(data, 5)
+    wind = (low + high) / 2
+    wind = sum(data) / len(data)
+    # cut in
+    if low < 2:
+      low = 2
+  
+  print('READ FILE')
+
+except: 
+  data = 0
+  if (data is None or data == 0):
+    print('FILE UNABLE TO BE READ, DEFAULTING.')
+    wind  = int(input('WINDSPEED: '))
+    low = int(input('WINDSPEED: '))
+    high = int(input('WINDSPEED: '))
+
+DIAM = float(input('DIAMETER: '))
 HEIGHT = float(input('HEIGHT: '))
 GENSPEED = int(input('GENSPEED: '))
-gearratio(wind)
+gearratio(wind, low, high, DIAM, HEIGHT)

@@ -1,36 +1,54 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
+import math
 
 BETZ = 0.35
 GENEFF = 0.85
 CVTEFF = 0.85
-IDEALTSR = 2 # small widnd turbines
-# tsr = w*R / V
+TSR = 2 # small widnd turbines
+RATIO = 1.75 # see sources
 
-# simulate wind fluctuations
-# this assumes a minute 
-def createWind(wind, n):
-  windList = []
-  windList.append(
-    wind +
-    2 * np.pi * (2 * np.pi * 0 / 120) +
-    1 * np.pi * (2 * np.pi * 0 / 30) +
-    0.5 * np.random.randn(n)
-  )
+def w2area(wind, power, DENSITY):
+  print('AT WIND SPEED: ' + str(wind) + 'M/S')
+  area = (2*power / (wind**3 * BETZ * DENSITY))
+  diameter = math.sqrt(area / (RATIO))
+  height = diameter * RATIO
 
-  return windList[0]
+  # given power
+  # mechanical power btw
+  power = 0.5 * DENSITY * BETZ * wind**3 * (diameter * height)
 
-# we use a tsr based approach
-# what we do is calculate tsr, make ideal gear ratio to match from tsr 
-# then "tilt" the shift to know how much to shift for that
-# also place a treshhold so we dont shift all the time
-# calculate current gear ratio, return ideal and power output from electricity
+
+  print('AREA: ' + str(area))
+  print('DIAMETER: ' + str(diameter))
+  print('HEIGHT: ' + str(height))
+  return diameter, height
+
+def gearratio(WINDSPEED, LOWEST, HIGHEST, DIAM, GENERATORRATEDSPEED):
+  print(f"DIAGNOSTICS AT AVERAGE WINDSPEED {WINDSPEED}M/S")
+  TRADIUS = DIAM / 2
+
+  print('------------------------------------------')
+  print(f"LOWEST WIND SPEED: {LOWEST} \nHIGHEST: {HIGHEST}")
+
+  # conv to rads 
+  RPMRAD = (GENERATORRATEDSPEED * 2 * math.pi) / 60
+  LOWESTROTATIONALSPEED = (TSR * LOWEST) / TRADIUS
+  HIGHESTROTATIONALSPEED = (TSR * HIGHEST) / TRADIUS
+  RATEDROTATIONALSPEED = (TSR * WINDSPEED) / TRADIUS
+  print(RATEDROTATIONALSPEED)
+
+  # formula for gear ratio = GENSPEE / ROTATIONAL SPEED OF TURBINE
+  HIGHESTGR = RPMRAD / HIGHESTROTATIONALSPEED
+  LOWESTGR = RPMRAD / LOWESTROTATIONALSPEED
+  AVERAGEGR = RPMRAD / RATEDROTATIONALSPEED
+  print('------------------------------------------')
+  print(f"UPPER BOUND: {HIGHESTGR} \nLOWEST: {LOWESTGR} \nAVERAGE: {AVERAGEGR}")
+  
+  return HIGHESTGR, LOWESTGR, AVERAGEGR
+  
 def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
-  # input radius of torroidal cvt discs
-  # rinput = dimensions.input
-  # routput = dimensions.output
-  # torus shifter, it adjusts angle to change radius
   theta = 0
 
   # upper and lower gear ratios, given from vawtgearratio
@@ -85,11 +103,8 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
 
     # print(f'SHIFTED TO {gearRatio}, expected rpm {gearRatio * rpm}, ideal {idealgr} expected ideal {idealgr * rpm}')
 
-  # given this, i want to recalculate power at that moment
-  # torque of turbine at that moment
   torque = power / speed
 
-  # generator speed
   genspeed = speed / gearRatio
   gentorque = torque * gearRatio * GENEFF
 
@@ -110,7 +125,6 @@ def simulate(windList, dimensions, config):
   # - rpm at that moment
   # - torque 
 
-  angularaccel = 0
   angularvelo = 0
   netpowarr = []
   epowerarr = []
@@ -118,7 +132,6 @@ def simulate(windList, dimensions, config):
   ratioarr = []
   rpmarr = []
   kwharr = []
-  srgpowarr = []
 
   kwh = 0
   opower = 0 
@@ -127,17 +140,13 @@ def simulate(windList, dimensions, config):
     # power is power from wind - power from inertia
     if (windList[i] == 0):
       windList[i] = 0.1
-    # inertia is defined by moment of inertia * angular accel * angular velocity
     omega = angularvelo # past angular velo
-    rpm = (IDEALTSR * windList[i] * 60) / (2 * np.pi * dimensions['diam'] /2)
+    rpm = (TSR * windList[i] * 60) / (2 * np.pi * dimensions['diam'] /2)
     # rpm = 100
     torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * windList[i]**3 
     power = torque * BETZ
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
-
-    # DELTA V / DELTA S
-    angularaccel = (angularvelo - omega) / 900 # 15 MINUTE CONFIGURATION
 
     epower = shifterDriver(power , rpm, angularvelo, dimensions, config, windList[i], ratio)
 
@@ -164,8 +173,8 @@ def simulate(windList, dimensions, config):
     'genrpm': rpmarr,
     'kwh': kwharr
   }
-  visualize(windList, metrics)
 
+  visualize(windList, metrics)
 
 def visualize(wind, metrics):
   # time series
@@ -196,54 +205,56 @@ def visualize(wind, metrics):
   plt.tight_layout()
   plt.show()
 
-def main():
-  # only if no provided wind data
-  print('>> WINDSPEED ----------------')
-  filename = input('FILENAME: ')
-  print('READING FILE FOR DATA')
 
-  data = [] # get file 
-  # this is for nrel
-  try:
-    with open(filename, mode='r', newline='') as file:
-      reader = csv.reader(file)
-      for _ in range(2):
-        next(reader)
-      
-      for row in reader:
-        data.append(float(row[5]))
-    
-    print('READ FILE')
 
-  except: 
-    data = 0
-    if (data is None or data == 0):
-      print('FILE UNABLE TO BE READ, DEFAULTING.')
-      w = int(input('WINDSPEED: '))
-      d = int(input('NUMBER OF DATAPOINTS: '))
-      data = createWind(w, d)
+filename = input('FILENAME: ')
+print('READING FILE FOR DATA')
 
-  print('>> DIMENSIONS ---------------')
-  diameter = float(input('TURBINE DIAMETER: '))
-  height = float(input('TURBINE HEIGHT: '))
-  dimen = {
-    'diam': diameter, 
-    'hei': height,
-  }
+data = [] # get file 
+wind = 0
+high = low = 0
+# this is for nrel
+with open(filename, mode='r', newline='') as file:
+  reader = csv.reader(file)
+  for _ in range(2):
+    next(reader)
+  
+  for row in reader:
+    data.append(float(row[5]))
 
-  print('>> CONFIG -------------------')
-  den = float(input('AIR DENSITY: '))
-  genspeed = int(input('GENERATOR RATED RPM: '))
-  lower = float(input('LOWER GEAR RATIO: '))
-  upper = float(input('UPPER GEAR RATIO: '))
+  high = max(data)
+  low = np.percentile(data, 5)
+  wind = (low + high) / 2
+  wind = sum(data) / len(data)
+  # cut in
+  if low < 2:
+    low = 2
+  
+  print('READ FILE')
 
-  conf = {
-    'density': den,
-    'genv': genspeed,
-    'lowerbound': lower,
-    'upperbound': upper,
-  }
-  simulate(data, dimen, conf)
+DENSITY = float(input('WIND DENSITY: '))
+POWER = float(input('DESIRED POWER: '))
+GENV = int(input('GENERATOR SPEED: '))
+diam, hei = w2area(wind, POWER, DENSITY)
 
-if __name__ == '__main__':
-  main()
+upper, lower, ave = gearratio(wind, low, high, diam, GENV)
+
+dimen = {
+  'diam': diam, 
+  'hei': hei,
+}
+
+conf = {
+  'density': DENSITY,
+  'genv': GENV,
+  'lowerbound': lower,
+  'upperbound': upper,
+}
+
+simulate(data, dimen, conf)
+
+print('SRG RESULTS ----------------------')
+
+conf['lowerbound'] = ave
+conf['upperbound'] = ave
+simulate(data, dimen, conf)

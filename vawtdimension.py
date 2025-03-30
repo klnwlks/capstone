@@ -1,7 +1,7 @@
 import matplotlib
 import math
 
-DENSITY = 1.225
+DENSITY = 1
 BETZ = 0.35 # rough average of vawt limit
 TSR = 2 # small vawt scale for darries
 SOLIDITY = 0.2 # optimal for small vawts with small windspeeds
