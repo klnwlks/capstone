@@ -118,7 +118,7 @@ def simulate(windList, dimensions, config):
   ratioarr = []
   rpmarr = []
   kwharr = []
-  srgpowarr = []
+  effarr = []
 
   kwh = 0
   opower = 0 
@@ -149,6 +149,7 @@ def simulate(windList, dimensions, config):
     eff = epower['rpm'] / config['genv']
     if (eff > 1): 
       eff = config['genv'] / epower['rpm']
+    effarr.append(eff)
     opower = eff * epower['power']
     opowerarr.append(opower)
     kwh += (opower * 0.25) / 1000 # nrel specific
@@ -162,7 +163,8 @@ def simulate(windList, dimensions, config):
     'opow': opowerarr,
     'ratio': ratioarr,
     'genrpm': rpmarr,
-    'kwh': kwharr
+    'kwh': kwharr,
+    'eff': effarr
   }
   visualize(windList, metrics)
 
@@ -179,6 +181,7 @@ def visualize(wind, metrics):
   print(f'MEAN RPM: {np.mean(metrics['genrpm'])}')
   print(f'MEAN RATIO: {np.mean(metrics['ratio'])}')
   print(f'MEAN KWH GENERATION: {np.mean(metrics['kwh'])}')
+  print(f'MEAN EFFICIENCY: {np.mean(metrics['eff'])}')
 
 
   fig[0].plot(x, wind, label='TIME VS WIND')

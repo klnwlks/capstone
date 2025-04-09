@@ -101,7 +101,7 @@ def shifterDriver(power, rpm, speed, dimensions, config, wv, gr):
     else: 
       gearRatio = idealgr
 
-    # print(f'SHIFTED TO {gearRatio}, expected rpm {gearRatio * rpm}, ideal {idealgr} expected ideal {idealgr * rpm}')
+  # print(f'SHIFTED TO {gearRatio}, expected rpm {gearRatio * rpm}, ideal {idealgr} expected ideal {idealgr * rpm}')
 
   torque = power / speed
 
@@ -132,6 +132,7 @@ def simulate(windList, dimensions, config):
   ratioarr = []
   rpmarr = []
   kwharr = []
+  effarr = []
 
   kwh = 0
   opower = 0 
@@ -140,11 +141,13 @@ def simulate(windList, dimensions, config):
     # power is power from wind - power from inertia
     if (windList[i] == 0):
       windList[i] = 0.1
-    omega = angularvelo # past angular velo
     rpm = (TSR * windList[i] * 60) / (2 * np.pi * dimensions['diam'] /2)
     # rpm = 100
     torque = 0.5 * config['density'] * (dimensions['diam'] * dimensions['hei']) * windList[i]**3 
     power = torque * BETZ
+
+    if (power > POWER * 5):
+      power = POWER
     # delta angular velo / delta time
     angularvelo = rpm / 60 * 2 * np.pi
 
@@ -158,6 +161,7 @@ def simulate(windList, dimensions, config):
     eff = epower['rpm'] / config['genv']
     if (eff > 1): 
       eff = config['genv'] / epower['rpm']
+    effarr.append(eff)
     opower = eff * epower['power']
     opowerarr.append(opower)
     kwh += (opower * 0.25) / 1000 # nrel specific
@@ -171,7 +175,8 @@ def simulate(windList, dimensions, config):
     'opow': opowerarr,
     'ratio': ratioarr,
     'genrpm': rpmarr,
-    'kwh': kwharr
+    'kwh': kwharr,
+    'eff': effarr
   }
 
   visualize(windList, metrics)
@@ -188,18 +193,27 @@ def visualize(wind, metrics):
   print(f'MEAN RPM: {np.mean(metrics['genrpm'])}')
   print(f'MEAN RATIO: {np.mean(metrics['ratio'])}')
   print(f'MEAN KWH GENERATION: {np.mean(metrics['kwh'])}')
+  print(f'MEAN EFFICIENCY: {np.mean(metrics['eff'])}')
 
 
   fig[0].plot(x, wind, label='TIME VS WIND')
+  fig[0].set(xlabel= 'DATAPOINTS')
+  fig[0].set(ylabel='WIND VELOCITY IN m/s')
   fig[0].legend()
 
   fig[1].plot(x, metrics['opow'], label='TIME VS POWER GENERATION')
+  fig[1].set(xlabel='DATAPOINTS')
+  fig[1].set(ylabel='WATTS')
   fig[1].legend()
 
   fig[2].plot(x, metrics['genrpm'], label='TIME VS RPM')
+  fig[2].set(xlabel='DATAPOINTS')
+  fig[2].set(ylabel='RPM')
   fig[2].legend()
 
   fig[3].plot(x, metrics['ratio'], label='GEAR RATIO')
+  fig[3].set(xlabel='DATAPOINTS')
+  fig[3].set(ylabel='GEAR RATIO')
   fig[3].legend()
 
   plt.tight_layout()
