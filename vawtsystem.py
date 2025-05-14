@@ -5,7 +5,7 @@ import math
 
 BETZ = 0.35
 GENEFF = 0.85
-CVTEFF = 0.85
+CVTEFF = 0.98
 TSR = 2 # small widnd turbines
 RATIO = 1.75 # see sources
 
@@ -179,6 +179,16 @@ def simulate(windList, dimensions, config):
     'eff': effarr
   }
 
+  verification = {
+    'pow': netpowarr[0],
+    'opow': opowerarr[0],
+    'ratio': ratioarr[0],
+    'genrpm': rpmarr[0],
+    'kwh': kwharr[0],
+    'eff': effarr[0]
+  }
+
+  print(verification)
   visualize(windList, metrics)
 
 def visualize(wind, metrics):
@@ -187,8 +197,10 @@ def visualize(wind, metrics):
   ax, fig = plt.subplots(4, 1)
 
   print('-- RESULTS ')
-  print(f'MEAN POWER FROM TURBINE {np.mean(metrics['pow'])}')
   print(f'MEAN WINDSPEED: {np.mean(wind)}')
+ 
+
+  print(f'MEAN POWER FROM TURBINE {np.mean(metrics['pow'])}')
   print(f'MEAN ELECTRIC POWER: {np.mean(metrics['opow'])}')
   print(f'MEAN RPM: {np.mean(metrics['genrpm'])}')
   print(f'MEAN RATIO: {np.mean(metrics['ratio'])}')
@@ -246,6 +258,9 @@ with open(filename, mode='r', newline='') as file:
   
   print('READ FILE')
 
+print(f'standard dev: {np.std(data)}')
+print(f'variance: {np.var(data)}')
+ 
 DENSITY = float(input('WIND DENSITY: '))
 POWER = float(input('DESIRED POWER: '))
 GENV = int(input('GENERATOR SPEED: '))
