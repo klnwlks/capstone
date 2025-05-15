@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Marked Locations</name>
+    <Placemark>
+      <name>Zamboanguita, Negros</name>
+      <Point><coordinates>123.18225,9.108664,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Sariaya, Quezon</name>
+      <Point><coordinates>121.50883,14.001712,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Nagsubu, Batangas</name>
+      <Point><coordinates>120.823,14.078566,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Mount Iglit, Occidental Mindoro</name>
+      <Point><coordinates>121.20706,12.643955,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Calintaan, Oriental Mindoro</name>
+      <Point><coordinates>121.23449,12.592719,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Pag-asa, Occidental Mindoro</name>
+      <Point><coordinates>121.01503,13.0538435,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Santa Fe, Nueva Vizcaya</name>
+      <Point><coordinates>120.823,16.230482,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Tinio, Nueva Ecija</name>
+      <Point><coordinates>121.20706,15.256996,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Tineg, Abra</name>
+      <Point><coordinates>120.79556,17.818802,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Trinidad, Bulacan</name>
+      <Point><coordinates>121.12476,15.154524,0</coordinates></Point>
+    </Placemark>
+  </Document>
+</kml>
